@@ -26,10 +26,9 @@ AUTH_USER_MODEL = 'api.User'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # React/Node frontend
-    "http://127.0.0.1:3000",  # Alternative local frontend
+    "https://unicourse-cfp0.onrender.com",  # React/Node frontend
 ]
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['unicourse-backend.onrender.com']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
