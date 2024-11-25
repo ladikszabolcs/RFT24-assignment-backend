@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-=ctnx9+u$l6l!21b6s-dwzsnj(7!jo#*iyy+8$^+g)y%0-1)u1
 AUTH_USER_MODEL = 'api.User'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 CORS_ALLOWED_ORIGINS = [
     "https://unicourse-cfp0.onrender.com",  # React/Node frontend
 ]
