@@ -32,7 +32,7 @@ class Lecture(models.Model):
     max_students = models.PositiveIntegerField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'teacher'})
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE)
     students = models.ManyToManyField(User, related_name='lectures', limit_choices_to={'role': 'student'}, blank=True)
 
     def __str__(self):
