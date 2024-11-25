@@ -30,12 +30,20 @@ class CurrentUserView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]  # All users must be authenticated
 
     def get_permissions(self):
-        if self.action in ['create', 'destroy', 'update']:
+        if self.action == 'list':  # Restrict list action
             return [IsAdmin()]
-        return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+
+    def list(self, request, *args, **kwargs):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'You do not have permission to view the user list.'},
+                status=403
+            )
+        return super().list(request, *args, **kwargs)
 
 class LectureViewSet(viewsets.ModelViewSet):
     queryset = Lecture.objects.all()
