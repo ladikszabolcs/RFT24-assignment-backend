@@ -41,24 +41,49 @@ class LectureViewSet(viewsets.ModelViewSet):
     queryset = Lecture.objects.all()
     serializer_class = LectureSerializer
     authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'destroy']:
             return [IsTeacherOrAdmin()]
         return [permissions.IsAuthenticated()]
 
-    @action(detail=True, methods=['post'])
-    def apply(self, request, pk=None):
+    @action(detail=True, methods=['post'], url_path='enroll')
+    def enroll(self, request, pk=None):
+        """Enroll the authenticated student in a lecture."""
         lecture = self.get_object()
-        if request.user.role == 'student' and lecture.students.count() < lecture.max_students:
-            lecture.students.add(request.user)
-            return Response({'status': 'applied'})
-        return Response({'status': 'failed'}, status=400)
+        user = request.user
 
-    @action(detail=True, methods=['post'])
-    def unapply(self, request, pk=None):
+        # Ensure the user is a student
+        if user.role != 'student':
+            return Response({'error': 'Only students can enroll in lectures.'}, status=403)
+
+        # Check if the lecture has available slots
+        if lecture.students.count() >= lecture.max_students:
+            return Response({'error': 'This lecture is already full.'}, status=400)
+
+        # Check if the student is already enrolled
+        if lecture.students.filter(id=user.id).exists():
+            return Response({'error': 'You are already enrolled in this lecture.'}, status=400)
+
+        # Enroll the student
+        lecture.students.add(user)
+        return Response({'message': 'You have been successfully enrolled.'}, status=200)
+
+    @action(detail=True, methods=['post'], url_path='unenroll')
+    def unenroll(self, request, pk=None):
+        """Unenroll the authenticated student from a lecture."""
         lecture = self.get_object()
-        if request.user.role == 'student':
-            lecture.students.remove(request.user)
-            return Response({'status': 'unapplied'})
-        return Response({'status': 'failed'}, status=400)
+        user = request.user
+
+        # Ensure the user is a student
+        if user.role != 'student':
+            return Response({'error': 'Only students can unenroll from lectures.'}, status=403)
+
+        # Check if the student is enrolled in the lecture
+        if not lecture.students.filter(id=user.id).exists():
+            return Response({'error': 'You are not enrolled in this lecture.'}, status=400)
+
+        # Unenroll the student
+        lecture.students.remove(user)
+        return Response({'message': 'You have been successfully unenrolled.'}, status=200)
