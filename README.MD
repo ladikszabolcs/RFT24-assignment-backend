@@ -44,6 +44,7 @@ This is the backend for the UniCourse lecture management software, built with Dj
 This API uses token-based authentication. Obtain a token by sending a POST request to `/auth/token/` with valid credentials.
 
 ## API Endpoints
+https://app.swaggerhub.com/apis/SZABOLCSLADIK/UniCourse/1.0.0
 
 ### Authentication
 | Method | Endpoint        | Description                                         |
