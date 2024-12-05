@@ -2,11 +2,30 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 from .models import User, Lecture
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .serializers import UserSerializer, LectureSerializer
 
+class CustomAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+
+        # Delete any existing tokens for the user
+        Token.objects.filter(user=user).delete()
+
+        # Create a new token
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'token': token.key,
+            'user_id': user.id,
+            'email': user.email
+        })
 # Custom permission for admin-only access
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
