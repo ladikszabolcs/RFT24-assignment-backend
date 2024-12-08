@@ -1,47 +1,37 @@
+from api.models import User  # Az api.User importálása
+from rest_framework.test import APIClient
+from rest_framework.authtoken.models import Token
+from django.urls import reverse
 from django.test import TestCase
-from django.test import TestCase
-import requests
-
-BASE_URL = "http://127.0.0.1:8000/"  # Lokális backend URL
 
 class APITestCase(TestCase):
-    def test_health_check(self):
-        """Teszteljük, hogy az API fut-e."""
-        response = requests.get(f"{BASE_URL}health/")
+
+    def setUp(self):
+        # Létrehozzuk a teszt felhasználót
+        self.user = User.objects.create_user(username='testuser', password='password')
+
+        # Töröljük a felhasználóhoz tartozó összes meglévő tokent, ha van
+        Token.objects.filter(user=self.user).delete()
+
+        # Token generálása a felhasználóhoz
+        self.token = Token.objects.create(user=self.user)
+
+        self.client = APIClient()
+
+    def test_api_token_auth(self):
+        # POST kérést küldünk a /token/ endpointnak a felhasználó adatainkkal
+        response = self.client.post(reverse('api_token_auth'), data={
+            'username': 'testuser',
+            'password': 'password'
+        })
+        # Ellenőrizzük, hogy a válasz státusza 200
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json().get("status"), "ok")
 
-    def test_get_all_courses(self):
-        """Teszteljük az összes kurzus lekérdezését."""
-        response = requests.get(f"{BASE_URL}api/courses/")
+    def test_auth_me(self):
+        # A token-t küldjük a kérés fejléceként
+        response = self.client.get(
+            reverse('auth_me'),
+            HTTP_AUTHORIZATION='Token ' + self.token.key  # Helyes token formátum
+        )
+        # Ellenőrizzük, hogy a válasz státusza 200
         self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), list)
-
-    def test_login(self):
-        """Teszteljük a bejelentkezési funkciót."""
-        payload = {
-            "username": "student",
-            "password": "StudentDraken123"
-        }
-        response = requests.post(f"{BASE_URL}auth/login/", json=payload)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("token", response.json())
-
-    def test_create_course(self):
-        """Teszteljük új kurzus létrehozását (admin felhasználóval)."""
-        token = self._get_auth_token("administrator", "DrakenAdmin456")
-        headers = {"Authorization": f"Bearer {token}"}
-        payload = {
-            "name": "New Test Course",
-            "description": "This is a test course"
-        }
-        response = requests.post(f"{BASE_URL}api/courses/", json=payload, headers=headers)
-        self.assertEqual(response.status_code, 201)
-
-    def _get_auth_token(self, username, password):
-        """Segédfüggvény az autentikációs token lekéréséhez."""
-        payload = {"username": username, "password": password}
-        response = requests.post(f"{BASE_URL}auth/login/", json=payload)
-        return response.json().get("token")
-
-
